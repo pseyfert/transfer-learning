@@ -1,3 +1,5 @@
+![transfer learning](https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Knowledge_transfer.svg/312px-Knowledge_transfer.svg.png)
+
 # transfer learning
 
 an attempt to use arXiv:1409.7495 in data from https://www.kaggle.com/c/flavours-of-physics
@@ -38,3 +40,13 @@ I want to do the following
    Make an invariant mass plot with the same number of events (see how much
    cleaner the S/B gets). In comparison to the other Caffe network, I will see
    how much the transferlearning gains in performance.
+
+
+# license
+
+The project code is licensed under the [MIT license](LICENSE).
+
+The project logo is from
+[wikipedia](https://commons.wikimedia.org/wiki/File:Knowledge_transfer.svgy)
+and licensed under [CC0
+1.0](https://creativecommons.org/publicdomain/zero/1.0/deed.en).
