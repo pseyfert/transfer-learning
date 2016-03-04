@@ -1,0 +1,122 @@
+# this is a comment
+name: "LogisticRegressionNet"
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "label"
+  top: "data"
+#  top: "one"
+#  top: "pid"
+#  top: "jentry"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "train.txt"
+#    batch_size: 100000
+    batch_size: 10000
+  }
+}
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "label"
+  top: "data"
+#  top: "one"
+#  top: "pid"
+#  top: "jentry"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "test.txt"
+    batch_size: 1
+  }
+}
+
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "ip1"
+  inner_product_param {
+    num_output: 40
+    weight_filler {
+      type: "xavier"
+    }
+  }
+  
+}
+layer {
+  name: "relu1"
+  type: "Sigmoid"
+  bottom: "ip1"
+  top: "relu1"
+}
+layer {
+  name: "dc_drop1"
+  type: "Dropout"
+  bottom: "relu1"
+  top: "dropout1"
+  dropout_param {
+    dropout_ratio: 0.1
+  }
+}
+
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "dropout1"
+  top: "ip2"
+  inner_product_param {
+    num_output: 15
+    weight_filler {
+      type: "xavier"
+    }
+  }
+  
+}
+layer {
+  name: "relu2"
+  type: "Sigmoid"
+  bottom: "ip2"
+  top: "relu2"
+}
+
+
+layer {
+  name: "dc_drop2"
+  type: "Dropout"
+  bottom: "relu2"
+  top: "dropout2"
+  dropout_param {
+    dropout_ratio: 0.07
+  }
+}
+
+layer {
+  name: "ip3"
+  type: "InnerProduct"
+  bottom: "dropout2"
+  top: "fc2"
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+  }
+}
+layer {
+  name: "reluend"
+  type: "Sigmoid"
+  bottom: "fc2"
+  top: "lp_fc8"
+}
+layer {
+  name: "loss"
+  #type: "SigmoidCrossEntropyLoss"
+  type: "SoftmaxWithLoss"
+  bottom: "lp_fc8"
+  bottom: "label"
+  top: "loss"
+}

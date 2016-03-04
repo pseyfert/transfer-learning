@@ -1,0 +1,321 @@
+# this is a comment
+name: "LogisticRegressionNet"
+layer {
+  name: "mc_data"
+  type: "HDF5Data"
+  top: "label"
+  top: "mc_data"
+  #top: "mc_jentry"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "train.txt"
+#    batch_size: 100000
+    batch_size: 10000
+  }
+}
+layer {
+  name: "mc_domain_label"
+  type: "DummyData"
+  top: "mc_domain_label"
+  dummy_data_param {
+    data_filler {
+      type: "constant"
+      value: 0
+    }
+    num: 5000
+    channels: 1
+    height: 1
+    width: 1
+  }
+  include {
+    phase: TRAIN
+  }
+}
+layer {
+  name: "real_data"
+  type: "HDF5Data"
+  top: "real_data"
+  #top: "real_jentry"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "realdata.txt"
+    batch_size: 5000
+  }
+}
+layer {
+  name: "real_domain_label"
+  type: "DummyData"
+  top: "real_domain_label"
+  dummy_data_param {
+    data_filler {
+      type: "constant"
+      value: 1
+    }
+    num: 5000
+    channels: 1
+    height: 1
+    width: 1
+  }
+  include {
+    phase: TRAIN
+  }
+}
+
+
+
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "label"
+  top: "data"
+  #top: "jentry"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "test.txt"
+    batch_size: 1
+  }
+}
+layer {
+  name: "domainlabels"
+  type: "DummyData"
+  top: "domain_label"
+  dummy_data_param {
+    data_filler {
+      type: "constant"
+      value: 0
+    }
+    num: 1
+    channels: 1
+    height: 1
+    width: 1
+  }
+  include {
+    phase: TEST
+  }
+}
+
+# ---------
+
+
+layer {
+  name: "concat_data"
+  type: "Concat"
+  bottom: "mc_data"
+  bottom: "real_data"
+  top: "data"
+  concat_param {
+    concat_dim: 0
+  }
+  include: { phase: TRAIN }
+}
+#layer {
+#  name: "concat_jentry"
+#  type: "Concat"
+#  bottom: "mc_jentry"
+#  bottom: "real_jentry"
+#  top: "jentry"
+#  concat_param {
+#    concat_dim: 0
+#  }
+#  include: { phase: TRAIN }
+#}
+layer {
+  name: "domain_label"
+  type: "Concat"
+  bottom: "mc_domain_label"
+  bottom: "real_domain_label"
+  top: "domain_label"
+  concat_param {
+    concat_dim: 0
+  }
+  include: { phase: TRAIN }
+}
+
+
+
+
+
+# -------
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "data"
+  top: "ip1"
+  inner_product_param {
+    num_output: 40
+    weight_filler {
+      type: "xavier"
+    }
+  }
+  
+}
+layer {
+  name: "relu1"
+  type: "Sigmoid"
+  bottom: "ip1"
+  top: "relu1"
+}
+layer {
+  name: "dc_drop1"
+  type: "Dropout"
+  bottom: "relu1"
+  top: "relu1"
+  dropout_param {
+    dropout_ratio: 0.1
+  }
+}
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "relu1"
+  top: "ip2"
+  inner_product_param {
+    num_output: 15
+    weight_filler {
+      type: "xavier"
+    }
+  }
+  
+}
+layer {
+  name: "relu2"
+  type: "Sigmoid"
+  bottom: "ip2"
+  top: "relu2"
+}
+
+
+layer {
+  name: "dc_drop2"
+  type: "Dropout"
+  bottom: "relu2"
+  top: "bottleneck"
+  dropout_param {
+    dropout_ratio: 0.07
+  }
+}
+
+
+# ------------------------------------------------------ Exclude target samples
+layer {
+  name: "slice_features"
+  type: "Slice"
+  bottom: "bottleneck"
+  top: "source_features"
+  top: "target_features"
+  slice_param {
+    slice_dim: 0
+  }
+  include: { phase: TRAIN }
+}
+layer {
+  name: "kill_target_features"
+  type: "Silence"
+  bottom: "target_features"
+  include: { phase: TRAIN }
+}
+layer {
+  name: "bottleneck_alias"
+  type: "Split"
+  bottom: "bottleneck"
+  top: "source_features"
+  include: { phase: TEST }
+}
+
+
+# ----------------------------------------------------------------------------
+layer {
+  name: "lp_fc8"
+  type: "InnerProduct"
+  bottom: "source_features"
+  top: "fc2"
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+  }
+}
+layer {
+  name: "reluend"
+  type: "Sigmoid"
+  bottom: "fc2"
+  top: "lp_fc8"
+}
+layer {
+  name: "loss"
+  #type: "SigmoidCrossEntropyLoss"
+  type: "SoftmaxWithLoss"
+  bottom: "lp_fc8"
+  bottom: "label"
+  top: "loss"
+}
+
+
+layer {
+  name: "grl"
+  type: "GradientScaler"
+  bottom: "bottleneck"
+  top: "grl"
+  gradient_scaler_param {
+    lower_bound: 0.0
+    upper_bound: 1.0
+    alpha: 10.0
+    max_iter: 10000
+  }
+}
+layer {
+  name: "dc_ip1"
+  type: "InnerProduct"
+  bottom: "grl"
+  top: "dc_ip1"
+  inner_product_param {
+    num_output: 20
+    weight_filler {
+      type: "xavier"
+    }
+  }
+}
+layer {
+  name: "dc_relu1"
+  type: "Sigmoid"
+  bottom: "dc_ip1"
+  top: "dc_ip1"
+}
+layer {
+  name: "dc_drop1"
+  type: "Dropout"
+  bottom: "dc_ip1"
+  top: "dc_ip1"
+  dropout_param {
+    dropout_ratio: 0.1
+  }
+}
+layer {
+  name: "dc_ip3"
+  type: "InnerProduct"
+  bottom: "dc_ip1"
+  top: "dc_ip3"
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+  }
+}
+layer {
+  name: "dc_loss"
+  #type: "SigmoidCrossEntropyLoss"
+  type: "SoftmaxWithLoss"
+  bottom: "dc_ip3"
+  bottom: "domain_label"
+  top: "dc_loss"
+  loss_weight: 0.3
+}
+
