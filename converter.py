@@ -175,6 +175,8 @@ def convertit(fnames): # all the mc files
       with h5py.File('realdata.h5','w') as f:
         f['real_data'] = data_data.astype(np.float32)
         f['real_jentry'] = data_jentry.astype(np.float32)
+        print "real_data length   ", len(data_data)
+        print "real_jentry length ", len(data_jentry)
 
 #      with h5py.File('leftoutdata.h5','w') as f:
 #        f['real_data'] = data_data.astype(np.float32)
@@ -327,13 +329,16 @@ files = [
 "inclB.root",
 "inclC.root"
 ]
+
+
+
+
 genminmax(files)
-convertit(files)
+
+#convertit(files)
 
 hl, = plt.plot([], [])
-
 losses, dlosses = trainit(hl)
-
 x = range(len(losses))
 plt.plot(x,losses)
 plt.show()

@@ -11,8 +11,7 @@ layer {
   }
   hdf5_data_param {
     source: "train.txt"
-#    batch_size: 100000
-    batch_size: 10000
+    batch_size: 5000
   }
 }
 layer {
