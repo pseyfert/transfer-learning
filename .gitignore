@@ -1,0 +1,6 @@
+*.root
+*.caffemodel
+*.solverstate
+template.C
+template.h
+*.h5
