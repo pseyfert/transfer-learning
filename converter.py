@@ -283,9 +283,9 @@ def applyit():
     c = TChain("Ds2PhiPi")
     c.Add("./2012UP.root")
     if grl:
-      of = TFile("caffe_grl.root","recreate")
+      of = TFile("/afs/cern.ch/work/p/pseyfert/caffe_grl.root","recreate")
     else:
-      of = TFile("caffe_reg.root","recreate")
+      of = TFile("/afs/cern.ch/work/p/pseyfert/caffe_reg.root","recreate")
     outtree = c.CloneTree(0)
     resp = np.zeros(1,dtype=float)
     respt= np.zeros(1,dtype=float)
@@ -337,14 +337,14 @@ genminmax(files)
 
 #convertit(files)
 
-hl, = plt.plot([], [])
-losses, dlosses = trainit(hl)
-x = range(len(losses))
-plt.plot(x,losses)
-plt.show()
-plt.savefig('foo.png')
+#hl, = plt.plot([], [])
+#losses, dlosses = trainit(hl)
+#x = range(len(losses))
+#plt.plot(x,losses)
+#plt.show()
+#plt.savefig('foo.png')
 
-#applyit()
+applyit()
 
 
 
