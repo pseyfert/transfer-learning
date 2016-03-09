@@ -1,7 +1,8 @@
 niter = 39000
 runtraining = True
-grl = True
-from ROOT import TChain, TTree
+grl = False
+normalise = True # False = output between -.5 and .5; True = mean 0. and RMS = 1.
+from ROOT import TChain, TTree, TH1F
 import numpy as np
 from numpy import array
 import h5py
@@ -52,20 +53,30 @@ def update_line(hl, new_data):
 
 fmin = np.zeros(len(features))
 fmax = np.zeros(len(features))
+mean = np.zeros(len(features))
+rms = np.zeros(len(features))
 
 def genminmax(fnames): # all the mc files
     c = TChain("Ds2PhiPi")
     global fmin
     global fmax
+    global mean
+    global rms
     for fname in fnames:
         c.Add(fname)
     for i in xrange(len(features)):
         fmin[i] = c.GetMinimum(features[i])
         fmax[i] = c.GetMaximum(features[i])
+        h = TH1F("buffer","buffer",400,fmin[i],fmax[i])
+        c.Draw(features[i]+">>buffer")
+        mean[i] = h.GetMean()
+        rms[i] = h.GetRMS()
 def convertit(fnames): # all the mc files
     c = TChain("Ds2PhiPi")
     global fmin
     global fmax
+    global mean
+    global rms
     for fname in fnames:
         c.Add(fname)
     train_flupshit = []
@@ -93,7 +104,10 @@ def convertit(fnames): # all the mc files
                     print fmin[f]
                     print fmax[f]
             for i in xrange(len(features)):
-               thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
+               if normalise:
+                   thelist[i] = (thelist[i]-mean[i])/rms[i]
+               else:
+                   thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
             if not printed:
                 printed = True
                 print thelist
@@ -103,7 +117,10 @@ def convertit(fnames): # all the mc files
             train_jentries.append(jentry)
             thelist = [getattr(c,f) for f in features]
             for i in xrange(len(features)):
-               thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
+               if normalise:
+                   thelist[i] = (thelist[i]-mean[i])/rms[i]
+               else:
+                   thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
             train_flupshit.append(thelist)
       else:
          if abs(c.truedsphipi) > 100:
@@ -114,7 +131,10 @@ def convertit(fnames): # all the mc files
             test_jentries.append(jentry)
          thelist = [getattr(c,f) for f in features]
          for i in xrange(len(features)):
-            thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
+            if normalise:
+                thelist[i] = (thelist[i]-mean[i])/rms[i]
+            else:
+                thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
          test_flupshit.append(thelist)
     
     
@@ -159,7 +179,10 @@ def convertit(fnames): # all the mc files
            data_jentries.append(jentry)
            thelist = [getattr(c,f) for f in features]
            for i in xrange(len(features)):
-               thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
+               if normalise:
+                   thelist[i] = (thelist[i]-mean[i])/rms[i]
+               else:
+                   thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
            data_flupshit.append(thelist)
 #       else:
 #           leftout_jentries.append(jentry)
@@ -187,6 +210,8 @@ def convertit(fnames): # all the mc files
 def trainit(hl):
     global fmin
     global fmax
+    global mean
+    global rms
     #
     #import os
     ##os.chdir('/home/pseyfert/coding/caffe')
@@ -310,7 +335,10 @@ def applyit():
         ####    continue
         thelist = [getattr(c,f) for f in features]
         for i in xrange(len(features)):
-            thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
+            if normalise:
+                thelist[i] = (thelist[i]-mean[i])/rms[i]
+            else:
+                thelist[i] = (thelist[i]-fmin[i])/(fmax[i]-fmin[i]) -0.5
         solver.test_nets[0].blobs['data'].data[...] = array(thelist)
         out = solver.test_nets[0].forward(start='ip1')  #don't like out so far
         #resp[0] = solver.test_nets[0].blobs['fc5'].data
@@ -335,14 +363,14 @@ files = [
 
 genminmax(files)
 
-#convertit(files)
+convertit(files)
 
-#hl, = plt.plot([], [])
-#losses, dlosses = trainit(hl)
-#x = range(len(losses))
-#plt.plot(x,losses)
-#plt.show()
-#plt.savefig('foo.png')
+hl, = plt.plot([], [])
+losses, dlosses = trainit(hl)
+x = range(len(losses))
+plt.plot(x,losses)
+plt.show()
+plt.savefig('foo.png')
 
 applyit()
 
