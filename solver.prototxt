@@ -4,11 +4,12 @@ test_interval: 100000
 base_lr: 0.01
 lr_policy: "step"
 gamma: 0.5
-stepsize: 6000
+stepsize: 65000
+#stepsize: 9000
 display: 1000
-max_iter: 50000
+max_iter: 150000
 momentum: 0.002
-weight_decay: 0.00002
+weight_decay: 0.00001
 snapshot: 3000
 snapshot_prefix: "standardsnapshot"
 solver_mode: CPU

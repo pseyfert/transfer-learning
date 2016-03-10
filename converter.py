@@ -1,4 +1,4 @@
-niter = 39000
+niter = 99000
 runtraining = True
 grl = False
 normalise = True # False = output between -.5 and .5; True = mean 0. and RMS = 1.
