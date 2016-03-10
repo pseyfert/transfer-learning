@@ -229,6 +229,7 @@ def trainit():
     #
     figure,ax = plt.subplots()
     lines, = ax.plot([],[])
+    runninglines, = ax.plot([],[])
     if grl:
        dlines, = ax.plot([],[])
     ax.set_autoscaley_on(True)
@@ -259,7 +260,9 @@ def trainit():
       solver = caffe.get_solver("grlsolver.prototxt")
     
     iters = np.zeros(niter+1)
+    refreshers = np.zeros((niter+1)/50)
     losses = np.zeros(niter+1)
+    running = np.zeros((niter+1)/50)
     dlosses = np.zeros(niter+1)
  
     if grl:
@@ -267,8 +270,6 @@ def trainit():
     else:
       solver.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
     
-
-   
       
     # automatic plot update taken from
     # http://stackoverflow.com/a/24272092/4588453
@@ -283,8 +284,12 @@ def trainit():
                  dlines.set_ydata(dlosses[:it])
 
           if (it%50)==10:
+              refreshers[it/50] = it
+              running[it/50] = np.mean(losses[max(it-50,0):it])
               lines.set_xdata(iters[:it])
               lines.set_ydata(losses[:it])
+              runninglines.set_xdata(refreshers[:it/50])
+              runninglines.set_ydata(running[:it/50])
           #if (it%1000)==10:
           #   ax.relim()
           #   ax.autoscale_view()
