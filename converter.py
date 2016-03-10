@@ -1,6 +1,6 @@
-niter = 99000
+niter = 63000
 runtraining = True
-grl = False
+grl = True
 normalise = True # False = output between -.5 and .5; True = mean 0. and RMS = 1.
 from ROOT import TChain, TTree, TH1F
 import numpy as np
@@ -160,14 +160,22 @@ def convertit(fnames): # all the mc files
     test_data = array(test_flupshit)
     test_label = array(test_labels)
     test_jentry = array(test_jentries)
-    
-    with h5py.File('test.h5','w') as f:
+
+    if grl:
+       h5name = 'grltest.h5'
+    else:
+       h5name = 'test.h5'
+    with h5py.File(h5name,'w') as f:
         f['data'] = test_data.astype(np.float32)
         f['label'] = test_label.astype(np.float32)
         f['jentry'] = test_jentry.astype(np.float32)
-    
-    
-    with h5py.File('train.h5','w') as f:
+
+
+    if grl:
+       h5name = 'grltrain.h5'
+    else:
+       h5name = 'train.h5'
+    with h5py.File(h5name,'w') as f:
       if grl:
         f['mc_data'] = train_data.astype(np.float32)
         f['label'] = train_label.astype(np.float32)
@@ -266,7 +274,15 @@ def trainit():
     dlosses = np.zeros(niter+1)
  
     if grl:
-      solver.net.copy_from('grlsnapshot_iter_'+str(63000)+'.caffemodel')
+      regular = caffe.get_solver("solver.prototxt")
+      regular.net.copy_from('grlsnapshot_iter_'+str(63000)+'.caffemodel')
+      solver.net.params['ip1'][0].data = regular.net.params['ip1'][0].data
+      solver.net.params['ip1'][1].data = regular.net.params['ip1'][1].data
+      solver.net.params['ip2'][0].data = regular.net.params['ip2'][0].data
+      solver.net.params['ip2'][1].data = regular.net.params['ip2'][1].data
+      solver.net.params['ip3'][0].data = regular.net.params['ip3'][0].data
+      solver.net.params['ip3'][1].data = regular.net.params['ip3'][1].data
+
     else:
       solver.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
     
@@ -414,15 +430,15 @@ files = [
 #genminmax(files)
 getminmax()
 
-#convertit(files)
+convertit(files)
 
-losses, dlosses = trainit()
+#losses, dlosses = trainit()
 #x = range(len(losses))
 #plt.plot(x,losses)
 #plt.show()
 #plt.savefig('foo.png')
 
-applyit()
+#applyit()
 
 
 

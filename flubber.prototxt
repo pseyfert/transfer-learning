@@ -10,8 +10,8 @@ layer {
     phase: TRAIN
   }
   hdf5_data_param {
-    source: "train.txt"
-    batch_size: 5000
+    source: "grltrain.txt"
+    batch_size: 30000
   }
 }
 layer {
@@ -23,7 +23,7 @@ layer {
       type: "constant"
       value: 0
     }
-    num: 5000
+    num: 30000
     channels: 1
     height: 1
     width: 1
@@ -42,7 +42,7 @@ layer {
   }
   hdf5_data_param {
     source: "realdata.txt"
-    batch_size: 5000
+    batch_size: 30000
   }
 }
 layer {
@@ -54,7 +54,7 @@ layer {
       type: "constant"
       value: 1
     }
-    num: 5000
+    num: 30000
     channels: 1
     height: 1
     width: 1
@@ -76,7 +76,7 @@ layer {
     phase: TEST
   }
   hdf5_data_param {
-    source: "test.txt"
+    source: "grltest.txt"
     batch_size: 1
   }
 }
@@ -230,7 +230,7 @@ layer {
 
 # ----------------------------------------------------------------------------
 layer {
-  name: "lp_fc8"
+  name: "ip3"
   type: "InnerProduct"
   bottom: "source_features"
   top: "fc2"
@@ -266,7 +266,7 @@ layer {
     lower_bound: 0.0
     upper_bound: 1.0
     alpha: 10.0
-    max_iter: 10000
+    max_iter: 150000
   }
 }
 layer {

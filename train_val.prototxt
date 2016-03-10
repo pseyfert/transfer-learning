@@ -14,7 +14,7 @@ layer {
   hdf5_data_param {
     source: "train.txt"
 #    batch_size: 100000
-    batch_size: 10000
+    batch_size: 30000
   }
 }
 layer {
@@ -59,7 +59,7 @@ layer {
   bottom: "relu1"
   top: "dropout1"
   dropout_param {
-    dropout_ratio: 0.1
+    dropout_ratio: 0.02
   }
 }
 
@@ -90,7 +90,7 @@ layer {
   bottom: "relu2"
   top: "dropout2"
   dropout_param {
-    dropout_ratio: 0.07
+    dropout_ratio: 0.01
   }
 }
 
