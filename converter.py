@@ -245,6 +245,8 @@ def trainit():
     dlosses = np.zeros(niter+1)
     
       
+    # automatic plot update taken from
+    # http://stackoverflow.com/a/24272092/4588453
     for it in ProgressBar()(range( niter+1 )):
           iters[it] = it
           solver.step(1)
