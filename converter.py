@@ -9,6 +9,7 @@ import h5py
 import sys
 from progressbar import ProgressBar
 import matplotlib.pyplot as plt
+plt.ion()
 import numpy
 
 
@@ -45,11 +46,6 @@ suffix = [
 ,"SPDhits"
  ]
 features = [ suff for suff in suffix ]
-
-def update_line(hl, new_data):
-    hl.set_xdata(numpy.append(hl.get_xdata(), new_data[0]))
-    hl.set_ydata(numpy.append(hl.get_ydata(), new_data[1]))
-    plt.draw()
 
 fmin = np.zeros(len(features))
 fmax = np.zeros(len(features))
@@ -207,12 +203,20 @@ def convertit(fnames): # all the mc files
 
 
 
-def trainit(hl):
+def trainit():
     global fmin
     global fmax
     global mean
     global rms
     #
+    figure,ax = plt.subplots()
+    lines, = ax.plot([],[])
+    if grl:
+       dlines, = ax.plot([],[])
+    ax.set_autoscaley_on(True)
+    ax.set_xlim(0,niter)
+    ax.set_ylim(0.5,0.8)
+    ax.grid()
     #import os
     ##os.chdir('/home/pseyfert/coding/caffe')
     sys.path.insert(0,'/home/pseyfert/coding/caffe/python')
@@ -236,17 +240,31 @@ def trainit(hl):
     else:
       solver = caffe.get_solver("grlsolver.prototxt")
     
+    iters = np.zeros(niter+1)
     losses = np.zeros(niter+1)
     dlosses = np.zeros(niter+1)
     
       
     for it in ProgressBar()(range( niter+1 )):
+          iters[it] = it
           solver.step(1)
           losses[it] = solver.net.blobs['loss'].data
           if grl:
              dlosses[it] = solver.net.blobs['dc_loss'].data
+             if (it%50)==10:
+                 dlines.set_xdata(iters[:it])
+                 dlines.set_ydata(dlosses[:it])
 
-          ### fixme
+          if (it%50)==10:
+              lines.set_xdata(iters[:it])
+              lines.set_ydata(losses[:it])
+          #if (it%1000)==10:
+          #   ax.relim()
+          #   ax.autoscale_view()
+          if (it%50)==10:
+             figure.canvas.draw()
+             figure.canvas.flush_events()
+
           #update_line(hl, (it,losses[it]))
     
         
@@ -363,14 +381,13 @@ files = [
 
 genminmax(files)
 
-convertit(files)
+#convertit(files)
 
-hl, = plt.plot([], [])
-losses, dlosses = trainit(hl)
-x = range(len(losses))
-plt.plot(x,losses)
-plt.show()
-plt.savefig('foo.png')
+losses, dlosses = trainit()
+#x = range(len(losses))
+#plt.plot(x,losses)
+#plt.show()
+#plt.savefig('foo.png')
 
 applyit()
 
