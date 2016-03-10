@@ -7,6 +7,7 @@ import numpy as np
 from numpy import array
 import h5py
 import sys
+import pickle
 from progressbar import ProgressBar
 import matplotlib.pyplot as plt
 plt.ion()
@@ -67,6 +68,23 @@ def genminmax(fnames): # all the mc files
         c.Draw(features[i]+">>buffer")
         mean[i] = h.GetMean()
         rms[i] = h.GetRMS()
+    with open("minmax.pkl","wb") as output:
+        pickle.dump(fmin,output,pickle.HIGHEST_PROTOCOL)
+        pickle.dump(fmax,output,pickle.HIGHEST_PROTOCOL)
+        pickle.dump(mean,output,pickle.HIGHEST_PROTOCOL)
+        pickle.dump(rms, output,pickle.HIGHEST_PROTOCOL)
+def getminmax():
+    # http://stackoverflow.com/a/4529901/4588453
+    global fmin
+    global fmax
+    global mean
+    global rms
+    with open("minmax.pkl","r") as input:
+        fmin=pickle.load(input)
+        fmax=pickle.load(input)
+        mean=pickle.load(input)
+        rms =pickle.load(input)
+
 def convertit(fnames): # all the mc files
     c = TChain("Ds2PhiPi")
     global fmin
@@ -243,7 +261,14 @@ def trainit():
     iters = np.zeros(niter+1)
     losses = np.zeros(niter+1)
     dlosses = np.zeros(niter+1)
+ 
+    if grl:
+      solver.net.copy_from('grlsnapshot_iter_'+str(63000)+'.caffemodel')
+    else:
+      solver.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
     
+
+   
       
     # automatic plot update taken from
     # http://stackoverflow.com/a/24272092/4588453
@@ -381,7 +406,8 @@ files = [
 
 
 
-genminmax(files)
+#genminmax(files)
+getminmax()
 
 #convertit(files)
 
