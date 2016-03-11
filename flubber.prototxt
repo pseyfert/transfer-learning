@@ -166,7 +166,7 @@ layer {
   bottom: "relu1"
   top: "relu1"
   dropout_param {
-    dropout_ratio: 0.1
+    dropout_ratio: 0.02
   }
 }
 layer {
@@ -196,7 +196,7 @@ layer {
   bottom: "relu2"
   top: "bottleneck"
   dropout_param {
-    dropout_ratio: 0.07
+    dropout_ratio: 0.01
   }
 }
 
@@ -293,7 +293,7 @@ layer {
   bottom: "dc_ip1"
   top: "dc_ip1"
   dropout_param {
-    dropout_ratio: 0.1
+    dropout_ratio: 0.04
   }
 }
 layer {

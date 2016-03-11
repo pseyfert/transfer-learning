@@ -242,7 +242,7 @@ def trainit():
        dlines, = ax.plot([],[])
     ax.set_autoscaley_on(True)
     ax.set_xlim(0,niter)
-    ax.set_ylim(0.5,0.8)
+    ax.set_ylim(0.3,0.7)
     ax.grid()
     #import os
     ##os.chdir('/home/pseyfert/coding/caffe')
@@ -275,13 +275,24 @@ def trainit():
  
     if grl:
       regular = caffe.get_solver("solver.prototxt")
-      regular.net.copy_from('grlsnapshot_iter_'+str(63000)+'.caffemodel')
-      solver.net.params['ip1'][0].data = regular.net.params['ip1'][0].data
-      solver.net.params['ip1'][1].data = regular.net.params['ip1'][1].data
-      solver.net.params['ip2'][0].data = regular.net.params['ip2'][0].data
-      solver.net.params['ip2'][1].data = regular.net.params['ip2'][1].data
-      solver.net.params['ip3'][0].data = regular.net.params['ip3'][0].data
-      solver.net.params['ip3'][1].data = regular.net.params['ip3'][1].data
+      regular.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
+      for i in xrange(len(solver.net.params['ip1'][0].data)):
+         for j in xrange(len(solver.net.params['ip1'][0].data[0])):
+            solver.net.params['ip1'][0].data[i][j] = regular.net.params['ip1'][0].data[i][j]
+      for i in xrange(len(solver.net.params['ip2'][0].data)):
+         for j in xrange(len(solver.net.params['ip2'][0].data[0])):
+            solver.net.params['ip2'][0].data[i][j] = regular.net.params['ip2'][0].data[i][j]
+      for i in xrange(len(solver.net.params['ip3'][0].data)):
+         for j in xrange(len(solver.net.params['ip3'][0].data[0])):
+            solver.net.params['ip3'][0].data[i][j] = regular.net.params['ip3'][0].data[i][j]
+
+      for i in xrange(len(solver.net.params['ip1'][1].data)):
+            solver.net.params['ip1'][1].data[i] = regular.net.params['ip1'][1].data[i]
+      for i in xrange(len(solver.net.params['ip2'][1].data)):
+            solver.net.params['ip2'][1].data[i] = regular.net.params['ip2'][1].data[i]
+      for i in xrange(len(solver.net.params['ip3'][1].data)):
+            solver.net.params['ip3'][1].data[i] = regular.net.params['ip3'][1].data[i]
+      solver.net.copy_from('grlsnapshot_iter_12000.caffemodel')
 
     else:
       solver.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
@@ -430,7 +441,7 @@ files = [
 #genminmax(files)
 getminmax()
 
-convertit(files)
+#convertit(files)
 
 #losses, dlosses = trainit()
 #x = range(len(losses))
@@ -438,7 +449,7 @@ convertit(files)
 #plt.show()
 #plt.savefig('foo.png')
 
-#applyit()
+applyit()
 
 
 
