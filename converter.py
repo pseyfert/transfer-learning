@@ -1,6 +1,7 @@
 niter = 63000
+load_from_standardnet = False
 runtraining = True
-grl = True
+grl = False
 normalise = True # False = output between -.5 and .5; True = mean 0. and RMS = 1.
 from ROOT import TChain, TTree, TH1F
 import numpy as np
@@ -19,7 +20,7 @@ suffix = [
 "NumberPV"
 ,"Ncandidates"
 ,"NbestTracks"
-,"mass"
+#,"mass"
 ,"LifeTime"
 ,"IPSig"
 ,"VertexChi2"
@@ -238,11 +239,12 @@ def trainit():
     figure,ax = plt.subplots()
     lines, = ax.plot([],[])
     runninglines, = ax.plot([],[])
+    testlosslines, = ax.plot([],[])
     if grl:
        dlines, = ax.plot([],[])
     ax.set_autoscaley_on(True)
-    ax.set_xlim(0,niter)
-    ax.set_ylim(0.3,0.7)
+    ax.set_xlim(0,niter/10)
+    ax.set_ylim(0.,1.0)
     ax.grid()
     #import os
     ##os.chdir('/home/pseyfert/coding/caffe')
@@ -271,37 +273,45 @@ def trainit():
     refreshers = np.zeros((niter+1)/50)
     losses = np.zeros(niter+1)
     running = np.zeros((niter+1)/50)
+    testloss = np.zeros((niter+1)/50)
     dlosses = np.zeros(niter+1)
  
     if grl:
-      regular = caffe.get_solver("solver.prototxt")
-      regular.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
-      for i in xrange(len(solver.net.params['ip1'][0].data)):
-         for j in xrange(len(solver.net.params['ip1'][0].data[0])):
-            solver.net.params['ip1'][0].data[i][j] = regular.net.params['ip1'][0].data[i][j]
-      for i in xrange(len(solver.net.params['ip2'][0].data)):
-         for j in xrange(len(solver.net.params['ip2'][0].data[0])):
-            solver.net.params['ip2'][0].data[i][j] = regular.net.params['ip2'][0].data[i][j]
-      for i in xrange(len(solver.net.params['ip3'][0].data)):
-         for j in xrange(len(solver.net.params['ip3'][0].data[0])):
-            solver.net.params['ip3'][0].data[i][j] = regular.net.params['ip3'][0].data[i][j]
+      if load_from_standardnet:
+          regular = caffe.get_solver("solver.prototxt")
+          regular.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
+          for i in xrange(len(solver.net.params['ip1'][0].data)):
+             for j in xrange(len(solver.net.params['ip1'][0].data[0])):
+                solver.net.params['ip1'][0].data[i][j] = regular.net.params['ip1'][0].data[i][j]
+          for i in xrange(len(solver.net.params['ip2'][0].data)):
+             for j in xrange(len(solver.net.params['ip2'][0].data[0])):
+                solver.net.params['ip2'][0].data[i][j] = regular.net.params['ip2'][0].data[i][j]
+          for i in xrange(len(solver.net.params['ip3'][0].data)):
+             for j in xrange(len(solver.net.params['ip3'][0].data[0])):
+                solver.net.params['ip3'][0].data[i][j] = regular.net.params['ip3'][0].data[i][j]
 
-      for i in xrange(len(solver.net.params['ip1'][1].data)):
-            solver.net.params['ip1'][1].data[i] = regular.net.params['ip1'][1].data[i]
-      for i in xrange(len(solver.net.params['ip2'][1].data)):
-            solver.net.params['ip2'][1].data[i] = regular.net.params['ip2'][1].data[i]
-      for i in xrange(len(solver.net.params['ip3'][1].data)):
-            solver.net.params['ip3'][1].data[i] = regular.net.params['ip3'][1].data[i]
-      solver.net.copy_from('grlsnapshot_iter_12000.caffemodel')
+          for i in xrange(len(solver.net.params['ip1'][1].data)):
+                solver.net.params['ip1'][1].data[i] = regular.net.params['ip1'][1].data[i]
+          for i in xrange(len(solver.net.params['ip2'][1].data)):
+                solver.net.params['ip2'][1].data[i] = regular.net.params['ip2'][1].data[i]
+          for i in xrange(len(solver.net.params['ip3'][1].data)):
+                solver.net.params['ip3'][1].data[i] = regular.net.params['ip3'][1].data[i]
+      else:
+         solver.net.copy_from('grlsnapshot_iter_12000.caffemodel')
 
     else:
-      solver.net.copy_from('standardsnapshot_iter_'+str(63000)+'.caffemodel')
+      if load_from_standardnet:
+          solver.net.copy_from('standardsnapshot_iter_'+str(39000)+'.caffemodel')
     
       
+    did_reset = False
     # automatic plot update taken from
     # http://stackoverflow.com/a/24272092/4588453
     for it in ProgressBar()(range( niter+1 )):
           iters[it] = it
+          if (not did_reset) and it>niter/10:
+              did_reset = True
+              ax.set_xlim(0,niter)
           solver.step(1)
           losses[it] = solver.net.blobs['loss'].data
           if grl:
@@ -317,6 +327,14 @@ def trainit():
               lines.set_ydata(losses[:it])
               runninglines.set_xdata(refreshers[:it/50])
               runninglines.set_ydata(running[:it/50])
+              tloss = []
+              for i in range (30000):
+                 solver.test_nets[0].forward()
+                 tloss.append(solver.test_nets[0].blobs['loss'].data)
+              testloss[it/50] = np.mean(tloss)
+              print "TESTLOSS = ", testloss[it/50]
+              testlosslines.set_xdata(refreshers[:it/50])
+              testlosslines.set_ydata(testloss[:it/50])
           #if (it%1000)==10:
           #   ax.relim()
           #   ax.autoscale_view()
@@ -327,12 +345,6 @@ def trainit():
           #update_line(hl, (it,losses[it]))
     
         
-    resps = np.zeros((100,2))
-    trues = np.zeros(100)
-    for i in range (100):
-        solver.test_nets[0].forward()
-        resps[i] = solver.test_nets[0].blobs['lp_fc8'].data
-        trues[i] = solver.test_nets[0].blobs['label'].data
     return losses, dlosses
 
 def applyit():
@@ -443,69 +455,10 @@ getminmax()
 
 #convertit(files)
 
-#losses, dlosses = trainit()
+losses, dlosses = trainit()
 #x = range(len(losses))
 #plt.plot(x,losses)
 #plt.show()
 #plt.savefig('foo.png')
 
-applyit()
-
-
-
-###if add_to_ks:
-###    kschain = TChain("Tuple")
-###    kschain.Add("ks.root")
-###    respp = np.zeros(1,dtype=float)
-###    respm = np.zeros(1,dtype=float)
-###    resptp= np.zeros(1,dtype=float)
-###    resptm= np.zeros(1,dtype=float)
-###
-###    if grl:
-###       of = TFile("ks_friend_grl.root","recreate")
-###       outtree = TTree("ks_friend_grl","ks friend with grl")
-###       outtree.Branch("piplus_caffe_responsec",respp,"caffe_responsec/D")
-###       outtree.Branch("piplus_caffe_responsed",resptp,"caffe_responsed/D")
-###       outtree.Branch("piminus_caffe_responsec",respm,"caffe_responsec/D")
-###       outtree.Branch("piminus_caffe_responsed",resptm,"caffe_responsed/D")
-###    else:
-###       of = TFile("ks_friend.root","recreate")
-###       outtree = TTree("ks_friend","ks friend without grl")
-###       outtree.Branch("piplus_caffe_responsea",respp,"caffe_responsea/D")
-###       outtree.Branch("piplus_caffe_responseb",resptp,"caffe_responseb/D")
-###       outtree.Branch("piminus_caffe_responsea",respm,"caffe_responsea/D")
-###       outtree.Branch("piminus_caffe_responseb",resptm,"caffe_responseb/D")
-###    for evt in ProgressBar()(xrange(kschain.GetEntries())):
-###        kschain.GetEntry(evt)
-###        thelist = [getattr(kschain,f) for f in piplusfeatures]
-###        thelist.append(1.)
-###        for ivar in range(21):
-###           thelist[ivar] = thelist[ivar]-fMin_1[2][ivar]
-###           thelist[ivar] = thelist[ivar]*fscale[2][ivar] - 1.
-###        solver.test_nets[0].blobs['data'].data[...] = array(thelist)
-###        out = solver.test_nets[0].forward(start='ip1')  #don't like out so far
-###        #resp[0] = solver.test_nets[0].blobs['fc5'].data
-###        respp[0] = solver.test_nets[0].blobs['lp_fc8'].data[0][0]
-###        resptp[0] = solver.test_nets[0].blobs['lp_fc8'].data[0][1]
-###        thelist = [getattr(kschain,f) for f in piminusfeatures]
-###        thelist.append(1.)
-###        for ivar in range(21):
-###           thelist[ivar] = thelist[ivar]-fMin_1[2][ivar]
-###           thelist[ivar] = thelist[ivar]*fscale[2][ivar] - 1.
-###        solver.test_nets[0].blobs['data'].data[...] = array(thelist)
-###        out = solver.test_nets[0].forward(start='ip1')  #don't like out so far
-###        #resp[0] = solver.test_nets[0].blobs['fc5'].data
-###        respm[0] = solver.test_nets[0].blobs['lp_fc8'].data[0][0]
-###        resptm[0] = solver.test_nets[0].blobs['lp_fc8'].data[0][1]
-###        outtree.Fill()
-###    of.WriteTObject(outtree)
-###    of.Close()
-###
-###
-###
-###
-###
-###   
-###
-###    #print "passes = ",passes, "\t\tfails = ",fails
-
+#applyit()
