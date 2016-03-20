@@ -1,7 +1,7 @@
 niter = 63000
-load_from_standardnet = False
+load_from_standardnet = True
 runtraining = True
-grl = False
+grl = True
 normalise = True # False = output between -.5 and .5; True = mean 0. and RMS = 1.
 from ROOT import TChain, TTree, TH1F
 import numpy as np
@@ -453,7 +453,7 @@ files = [
 #genminmax(files)
 getminmax()
 
-#convertit(files)
+convertit(files)
 
 losses, dlosses = trainit()
 #x = range(len(losses))
