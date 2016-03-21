@@ -266,7 +266,7 @@ layer {
     lower_bound: 0.0
     upper_bound: 1.0
     alpha: 10.0
-    max_iter: 150000
+    max_iter: 10000
   }
 }
 layer {

@@ -453,7 +453,7 @@ files = [
 #genminmax(files)
 getminmax()
 
-convertit(files)
+#convertit(files)
 
 losses, dlosses = trainit()
 #x = range(len(losses))
