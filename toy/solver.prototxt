@@ -1,0 +1,17 @@
+net: "train_reg.prototxt"
+test_iter: 0
+test_interval: 50
+base_lr: 0.01
+lr_policy: "step"
+gamma: 0.5
+#stepsize: 65000
+stepsize: 2500
+display: 1000
+max_iter: 150000
+#momentum: 0.002
+momentum: 0.0000
+#weight_decay: 0.00001
+weight_decay: 0.00
+snapshot: 3000
+snapshot_prefix: "standardsnapshot"
+solver_mode: CPU

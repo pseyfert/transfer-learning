@@ -1,0 +1,3 @@
+[submodule "lhcb-matplotlibrc"]
+	path = lhcb-matplotlibrc
+	url = https://github.com/kdungs/lhcb-matplotlibrc.git
